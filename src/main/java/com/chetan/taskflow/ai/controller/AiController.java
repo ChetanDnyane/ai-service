@@ -3,6 +3,7 @@ package com.chetan.taskflow.ai.controller;
 import com.chetan.taskflow.ai.dto.AiRequest;
 import com.chetan.taskflow.ai.dto.AiResponse;
 import com.chetan.taskflow.ai.dto.TaskSuggestion;
+import com.chetan.taskflow.ai.tool.TaskTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,9 +17,14 @@ import java.time.LocalDate;
 public class AiController {
 
     private final ChatClient chatClient;
+    private final TaskTools taskTools;
 
-    public AiController(ChatClient.Builder chatClientBuilder) {
+    public AiController(
+            ChatClient.Builder chatClientBuilder,
+            TaskTools taskTools) {
+
         this.chatClient = chatClientBuilder.build();
+        this.taskTools = taskTools;
     }
 
     @PostMapping("/ask")
@@ -34,6 +40,7 @@ public class AiController {
                         Keep your answers concise and practical.
                         """)
                 .user(request.message())
+                .tools(taskTools)
                 .call()
                 .content();
 

@@ -1,6 +1,6 @@
 package com.chetan.taskflow.ai.dto;
 
-public enum Priority {
+public enum TaskPriority {
     LOW,
     MEDIUM,
     HIGH

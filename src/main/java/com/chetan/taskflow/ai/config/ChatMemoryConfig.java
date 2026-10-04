@@ -3,7 +3,7 @@ package com.chetan.taskflow.ai.config;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,12 +12,11 @@ import org.springframework.context.annotation.Configuration;
 public class ChatMemoryConfig {
 
     @Bean
-    public ChatMemory chatMemory() {
+    public ChatMemory chatMemory(
+            ChatMemoryRepository chatMemoryRepository) {
 
         return MessageWindowChatMemory.builder()
-                .chatMemoryRepository(
-                        new InMemoryChatMemoryRepository()
-                )
+                .chatMemoryRepository(chatMemoryRepository)
                 .maxMessages(20)
                 .build();
     }
@@ -29,7 +28,8 @@ public class ChatMemoryConfig {
 
         return builder
                 .defaultAdvisors(
-                        MessageChatMemoryAdvisor.builder(chatMemory)
+                        MessageChatMemoryAdvisor
+                                .builder(chatMemory)
                                 .build()
                 )
                 .build();

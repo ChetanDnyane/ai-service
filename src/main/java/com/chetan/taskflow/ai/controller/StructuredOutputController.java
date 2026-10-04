@@ -1,5 +1,7 @@
 package com.chetan.taskflow.ai.controller;
 
+import com.chetan.taskflow.ai.guardrail.InputGuardrail;
+import com.chetan.taskflow.ai.guardrail.TaskIntentGuardrail;
 import com.chetan.taskflow.ai.structured.TaskIntent;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.*;
@@ -9,43 +11,60 @@ import org.springframework.web.bind.annotation.*;
 public class StructuredOutputController {
 
     private final ChatClient chatClient;
+    private final InputGuardrail inputGuardrail;
+    private final TaskIntentGuardrail taskIntentGuardrail;
 
     public StructuredOutputController(
-            ChatClient.Builder chatClientBuilder) {
+            ChatClient.Builder chatClientBuilder,
+            InputGuardrail inputGuardrail,
+            TaskIntentGuardrail taskIntentGuardrail) {
 
         this.chatClient = chatClientBuilder.build();
+        this.inputGuardrail = inputGuardrail;
+        this.taskIntentGuardrail = taskIntentGuardrail;
     }
 
     @PostMapping("/task-intent")
     public TaskIntent extractTaskIntent(
             @RequestBody TaskIntentRequest request) {
 
-        return chatClient
-                .prompt()
-                .system("""
-                        Extract TaskFlow task information from the
-                        user's request.
+        // INPUT GUARDRAIL
+        inputGuardrail.validate(request.message());
 
-                        intent must be one of:
-                        CREATE_TASK
-                        UPDATE_TASK
-                        DELETE_TASK
-                        UNKNOWN
+        TaskIntent intent =
+                chatClient
+                        .prompt()
+                        .system("""
+                            Extract TaskFlow task information from
+                            the user's request.
 
-                        priority must be one of:
-                        LOW
-                        MEDIUM
-                        HIGH
+                            intent must be one of:
+                            CREATE_TASK
+                            UPDATE_TASK
+                            DELETE_TASK
+                            UNKNOWN
 
-                        If no due date is specified, dueDate should
-                        be null.
+                            priority must be one of:
+                            LOW
+                            MEDIUM
+                            HIGH
 
-                        Do not invent information that the user
-                        did not provide.
-                        """)
-                .user(request.message())
-                .call()
-                .entity(TaskIntent.class);
+                            If priority is not specified,
+                            return null.
+
+                            If no due date is specified,
+                            return null.
+
+                            Do not invent information.
+                            """)
+                        .user(request.message())
+                        .call()
+                        .entity(TaskIntent.class);
+
+        // OUTPUT GUARDRAIL
+        taskIntentGuardrail.validate(intent);
+
+        return intent;
     }
 
     public record TaskIntentRequest(

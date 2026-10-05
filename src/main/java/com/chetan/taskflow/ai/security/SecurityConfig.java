@@ -32,12 +32,16 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth ->
                         auth
-                                .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
+                                .dispatcherTypeMatchers(
+                                        DispatcherType.ASYNC,
+                                        DispatcherType.ERROR
+                                ).permitAll()
                                 .requestMatchers(
                                         "/actuator/health",
                                         "/actuator/info",
                                         "/actuator/metrics"
                                 ).permitAll()
+                                .requestMatchers("/api/multimodal/**").authenticated()
                                 .requestMatchers("/actuator/prometheus").permitAll()
                                 .anyRequest().authenticated()
                 )
